@@ -1,0 +1,129 @@
+refresh:
+  name: 刷新燃气费
+  description: 立刻重新拉一次账单数据，不用等下一个刷新周期。
+  fields: {}
+
+set_reading:
+  name: 手动录入燃气读数
+  description: 手动写余额、欠费、用气量等。用于手动模式，或接口临时取不到数据时兜底。
+  fields:
+    entry_id:
+      name: 配置条目
+      description: 有多个燃气账户时指定写哪一条；只有一个账户可以留空。
+      example: "0123456789abcdef0123456789abcdef"
+      selector:
+        text:
+    balance:
+      name: 账户余额
+      description: 单位：元。
+      example: 100.5
+      selector:
+        number:
+          min: 0
+          max: 1000000
+          step: 0.01
+          mode: box
+          unit_of_measurement: 元
+    arrears:
+      name: 欠费金额
+      description: 单位：元，没有欠费填 0。
+      example: 0
+      selector:
+        number:
+          min: 0
+          max: 1000000
+          step: 0.01
+          mode: box
+          unit_of_measurement: 元
+    bill:
+      name: 最近一期气费
+      description: 单位：元。
+      example: 42.5
+      selector:
+        number:
+          min: 0
+          max: 1000000
+          step: 0.01
+          mode: box
+          unit_of_measurement: 元
+    usage:
+      name: 最近一期用气量
+      description: 单位：立方米。
+      example: 7
+      selector:
+        number:
+          min: 0
+          max: 100000
+          step: 0.01
+          mode: box
+          unit_of_measurement: m³
+    price:
+      name: 气价
+      description: 单位：元/立方米。
+      example: 2.53
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 0.01
+          mode: box
+          unit_of_measurement: 元/m³
+    meter:
+      name: 最新表底数
+      description: 表上读到的累计读数，单位：立方米。
+      example: 1234
+      selector:
+        number:
+          min: 0
+          max: 10000000
+          step: 0.01
+          mode: box
+          unit_of_measurement: m³
+    read_date:
+      name: 抄表日期
+      description: 形如 2026-10-18。
+      example: "2026-10-18"
+      selector:
+        text:
+
+dump_response:
+  name: 导出接口原始返回
+  description: 把最近一次接口返回原样导出到 /config/www/wuhan_gas_dump.json，同时作为服务响应返回，用来核对字段。
+  fields: {}
+
+set_token:
+  name: 写入抓包 token
+  description: 抓包代理抓到小程序请求头里的 token 后调用这里，集成会自动换 token 并重载，不用再手动点「重新授权」。
+  fields:
+    token:
+      name: token
+      description: 小程序请求头 token 的值（40 位以上）。
+      required: true
+      selector:
+        text:
+    userno:
+      name: 户号
+      description: 抓到的燃气户号；填了就会顺便校正配置里的户号。
+      example: "1234567890"
+      selector:
+        text:
+    orgid:
+      name: 机构编号
+      description: 一般不用填，接口默认 1（武汉市天然气）。
+      selector:
+        text:
+    meter_type:
+      name: 表类型
+      description: 1 = 机械表，2 = IC 卡表；一般不用填。
+      selector:
+        text:
+    entry_id:
+      name: 配置条目
+      description: 有多个燃气账户时指定写哪一条。
+      selector:
+        text:
+    origin:
+      name: 来源
+      description: capture = 抓包容器自动上报，manual = 手动。
+      selector:
+        text:

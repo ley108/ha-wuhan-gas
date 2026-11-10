@@ -1,0 +1,28 @@
+services:
+  gas-token-capture:
+    image: mitmproxy/mitmproxy:latest
+    container_name: gas-token-capture
+    restart: unless-stopped
+    ports:
+      - "8080:8080"   # 代理端口：手机/电脑把 HTTP 代理指向 <宿主IP>:8080
+      - "8081:8081"   # mitmweb 面板：http://<宿主IP>:8081，可实时看抓到的请求
+    volumes:
+      - ./addon:/addon:ro
+      - ./data:/data
+    env_file:
+      - .env
+    # 让容器用 host.docker.internal 指回宿主机（Linux 上默认没有这条）
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    command:
+      - mitmweb
+      - --listen-host=0.0.0.0
+      - --listen-port=8080
+      - --web-host=0.0.0.0
+      - --web-port=8081
+      - --no-web-open-browser
+      - --set=confdir=/data/conf
+      # wp.babel-group.cn 只认 AES256-SHA256（RSA 密钥交换），
+      # OpenSSL 3 默认 SECLEVEL=2 会直接握手失败，这里单独降一档
+      - --set=ciphers_client=DEFAULT:@SECLEVEL=1
+      - -s=/addon/token_hook.py

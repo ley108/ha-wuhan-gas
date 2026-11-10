@@ -1,0 +1,30 @@
+# 抓包容器
+capture/.env
+capture/data/
+capture/conf/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# 本地敏感文件：抓包产物、令牌、密钥
+*.pem
+*.key
+*.crt
+*.cer
+ca.key
+ca.srl
+token.txt
+*.session
+requests.jsonl
+states*.json
+panel_cookie.txt
+
+# 编辑器 / 系统
+.DS_Store
+.idea/
+.vscode/
+*.swp

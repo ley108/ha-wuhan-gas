@@ -1,0 +1,13 @@
+{
+  "domain": "wuhan_gas",
+  "name": "武汉燃气费",
+  "version": "1.0.0",
+  "documentation": "https://github.com/ley108/ha-wuhan-gas",
+  "issue_tracker": "https://github.com/ley108/ha-wuhan-gas/issues",
+  "codeowners": ["@ley108"],
+  "config_flow": true,
+  "iot_class": "cloud_polling",
+  "integration_type": "hub",
+  "requirements": [],
+  "dependencies": []
+}

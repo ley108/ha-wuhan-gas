@@ -1,0 +1,144 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "武汉燃气费",
+        "description": "填燃气户号（缴费单上的用户编号）。\n\n**数据来源**\n- 小程序接口（推荐）：微信里打开小程序「武汉燃气」，抓一次请求头里的 `token` 粘进来，集成会自动拉每月账单（读数、用气量、气费），不需要 Cookie。\n- 抓包接口：武汉天然气的微营业厅整站在微信授权后面，需要你在微信里打开一次「微营业厅 → 账单查询」，用抓包工具把那条查询请求复制下来粘到下一步。\n- 手动录入：暂时不抓包，先用 `wuhan_gas.set_reading` 服务录数字，抓包成功后再在集成里切过来。",
+        "data": {
+          "source": "数据来源",
+          "account": "燃气户号",
+          "account_name": "户名（可选）"
+        }
+      },
+      "babel": {
+        "title": "粘贴小程序 token",
+        "description": "微信 → 搜索小程序「武汉燃气」→ 打开「账期账单」→ 用抓包工具看任意一条 `wp.babel-group.cn/user/...` 请求，把请求头里 `token:` 后面那一整串（约 60~80 位，含 `/` 和 `==` 结尾）粘进来。\n\n户号 {account}；同一个 token 下绑了几个户号时，会自动选第一个，或在上一页填对户号。\n\ntoken 相当于登录状态，不要发给别人。",
+        "data": {
+          "token": "token（请求头里那一串）",
+          "refresh_minutes": "刷新间隔（分钟）"
+        }
+      },
+      "api": {
+        "title": "粘贴抓包请求",
+        "description": "支持三种粘法：① 抓包工具里「复制为 cURL」的整段；② 第一行是接口地址、下面几行是请求头；③ 只填 Cookie（地址留空时用默认接口）。\n\n微营业厅地址：{portal}\n\n登录态（Cookie/令牌）会过期，过期后集成会提示重新授权，把新的请求再粘一次即可。",
+        "data": {
+          "request": "请求（cURL 或 地址+请求头）",
+          "cookie": "Cookie（可单独填写）",
+          "refresh_minutes": "刷新间隔（分钟）",
+          "force": "认不出字段也先保存（排查用）"
+        }
+      },
+      "reauth_confirm": {
+        "title": "重新授权",
+        "description": "上次的登录态失效了（过期或退出登录）。请在微信里重新打开「微营业厅 → 账单查询」，抓一条新的请求粘进来。",
+        "data": {
+          "request": "请求（cURL 或 地址+请求头）",
+          "cookie": "Cookie（可单独填写）",
+          "refresh_minutes": "刷新间隔（分钟）",
+          "force": "认不出字段也先保存（排查用）"
+        }
+      }
+    },
+    "error": {
+      "invalid_account": "户号长度不对，一般是 8~12 位数字",
+      "invalid_token": "token 太短了：应该是请求头 `token:` 后面那一整串",
+      "invalid_request": "没解析出接口地址：确认粘贴的是查询账单那条请求",
+      "auth_failed": "登录态已过期：微营业厅把请求转去微信授权了，重新抓一条",
+      "cannot_connect": "连不上查询接口，检查网络后重试",
+      "no_account": "这个 token 下面没有绑定燃气户号，先在微信小程序里绑定户号",
+      "no_data": "接口返回为空或不是 JSON，确认粘的是数据接口而不是网页",
+      "no_field": "接口能通，但没在返回里认出余额/欠费/用气量。可勾选「先保存」，然后用 wuhan_gas.dump_response 服务把返回发出来校对字段"
+    },
+    "abort": {
+      "already_configured": "这个户号已经添加过了",
+      "reauth_successful": "重新授权成功",
+      "reauth_failed": "找不到原来的配置条目"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "武汉燃气费 选项",
+        "description": "两种模式通用的选项页：\n\n**小程序模式**：只需要换 token（登录态过期时重抓一串粘进来，留空表示不改）。\n\n**抓包接口模式**：换请求 / Cookie；字段路径留空表示自动识别，自动认错时先跑一次 `wuhan_gas.dump_response` 看原始返回，再填路径（如 `data.account.balance` 或 `data.list[0].qfje`）。\n\n刷新间隔对两种模式都生效。",
+        "data": {
+          "request": "请求（cURL 或 地址+请求头）",
+          "cookie": "Cookie",
+          "refresh_minutes": "刷新间隔（分钟）",
+          "path_balance": "余额字段路径",
+          "path_arrears": "欠费字段路径",
+          "path_usage": "用气量字段路径",
+          "path_bill": "气费字段路径",
+          "path_read_date": "抄表日期字段路径",
+          "path_price": "气价字段路径",
+          "path_meter": "表底数字段路径",
+          "token": "token（留空不改）"
+        }
+      }
+    },
+    "error": {
+      "base": "保存失败，请检查填的内容",
+      "invalid_token": "token 看着不像，一般是一串 40 位以上的字符",
+      "invalid_request": "没解析出接口地址：确认粘贴的是查询账单那条请求"
+    }
+  },
+  "services": {
+    "refresh": {
+      "name": "立即刷新",
+      "description": "立刻去拉一次气费数据。",
+      "fields": {
+        "entry_id": {
+          "name": "配置条目",
+          "description": "留空表示刷新全部账户。"
+        }
+      }
+    },
+    "set_reading": {
+      "name": "录入气费读数",
+      "description": "手动模式下手动写入余额、欠费、用气量等数字。只覆盖传入的字段。",
+      "fields": {
+        "entry_id": {
+          "name": "配置条目",
+          "description": "有多个账户时指定。"
+        },
+        "balance": {
+          "name": "账户余额",
+          "description": "元"
+        },
+        "arrears": {
+          "name": "欠费金额",
+          "description": "元"
+        },
+        "usage": {
+          "name": "本期用气量",
+          "description": "m³"
+        },
+        "bill": {
+          "name": "本期气费",
+          "description": "元"
+        },
+        "price": {
+          "name": "气价",
+          "description": "元/m³"
+        },
+        "meter": {
+          "name": "表底数",
+          "description": "m³"
+        },
+        "read_date": {
+          "name": "抄表日期",
+          "description": "YYYY-MM-DD"
+        }
+      }
+    },
+    "dump_response": {
+      "name": "导出原始返回",
+      "description": "把最近一次接口返回和识别到的字段路径写成持久通知，用来核对字段。",
+      "fields": {
+        "entry_id": {
+          "name": "配置条目",
+          "description": "留空表示全部账户。"
+        }
+      }
+    }
+  }
+}
